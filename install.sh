@@ -6,20 +6,16 @@ if [ "$(whoami)" != "root" ]; then
 	exit
 fi
 
+#MariaDB
+apt -y install mariadb-server
+
 echo "deb http://mirrordirector.raspbian.org/raspbian/ stretch main contrib non-free rpi" > /etc/apt/sources.list.d/stretch.list
 echo "APT::Default-Release \"jessie\";" > /etc/apt/apt.conf.d/99-default-release
 
 apt-get update -y
-apt-get upgrade -y
-apt-get dist-upgrade -y
-
-apt-get install -y rpi-update
 
 apt-get install -t stretch -y php7.0 php7.0-fpm php7.0-cli php7.0-opcache php7.0-mbstring php7.0-curl php7.0-xml php7.0-gd php7.0-mysql
 apt-get install -t stretch -y nginx
-
-update-rc.d nginx defaults
-update-rc.d php7.0-fpm defaults
 
 sed -i 's/^;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/' /etc/php/7.0/fpm/php.ini
 sed -i 's/# server_names_hash_bucket_size/server_names_hash_bucket_size/' /etc/nginx/nginx.conf
@@ -113,7 +109,7 @@ class Application
 {
 	public function __construct()
 	{
-		echo 'Hi ZonaIsc.com';
+		echo 'Hi HASAN';
 	}
 }
 
@@ -133,18 +129,6 @@ apt-get -y autoremove
 
 service nginx restart
 service php7.0-fpm restart
-
-# MySQL
-apt-get -t stretch -y install mysql-server
-
-read -s -p "Type the password you just entered (MySQL): " mysqlPass
-
-mysql --user="root" --password="$mysqlPass" --database="mysql" --execute="GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '$mysqlPass'; FLUSH PRIVILEGES;"
-
-sed -i 's/^bind-address/#bind-address/' /etc/mysql/mysql.conf.d/mysqld.cnf
-sed -i 's/^skip-networking/#skip-networking/' /etc/mysql/mysql.conf.d/mysqld.cnf
-
-service mysql restart
 
 # PhpMyAdmin
 read -p "Do you want to install PhpMyAdmin? <y/N> " prompt
