@@ -1,5 +1,5 @@
 # LEMP<br />
-<p>A script for install and setting up <b>LEMP</b> on your Raspberry Pi <b>automatically</b></ br>
+<p>A script for install and setting up <b>LEMP</b> on your Raspberry Pi <b>automatically</b><br>
 Enter domain name<br>
 <b>Choose</b> what you want to <b>install</b><br>
 Sit back and drink a few sip of coffee</p>
