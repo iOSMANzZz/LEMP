@@ -1,27 +1,80 @@
 #!/bin/bash
-# Based on https://gist.github.com/Lewiscowles1986/ce14296e3f5222082dbaa088ca1954f7
+# writed by iOSMAN
+# https://github.com/iOSMANzZz/LEMP/
 
 if [ "$(whoami)" != "root" ]; then
 	echo "Run script as ROOT please. (sudo !!)"
 	exit
 fi
 
-apt-get update -y
-apt-get upgrade -y
-apt-get dist-upgrade -y
+clear
+while true; do
+    echo "NOTE: Do NOT type local ip adress (192.168.x.x & 172.0.0.1) X"
+    read -p "Please type the domain what you want to create on nginx. <type & enter> " domain
+    case $domain in
+	[0]* ) nginx=0; break;;
+	*.* ) nginx=1; uzanti='.html'; break;;
+        * ) echo "Please type your domain or ip adress (not local). <domain.tld or x.x.x.x>";;
+    esac
+done
 
-apt-get install -y rpi-update
+while true; do
+    read -p "Do you want to run system upgrade? <y/N> " upgrade
+    case $upgrade in
+        [Yy]* ) upgrade=1; break;;
+        [Nn]* ) upgrade=0; break;;
+        * ) echo "Please answer yes or no.  <yY/nN>";;
+    esac
+done
 
-apt-get install -y php7.0 php7.0-fpm php7.0-cli php7.0-opcache php7.0-mbstring php7.0-curl php7.0-xml php7.0-gd php7.0-mysql php7.0-zip
-apt-get install -y nginx
+while true; do
+    read -p "Do you want to install PHP? <y/N> " php
+    case $php in
+        [Yy]* ) php=1; uzanti='.php'; phpcode='<?php phpinfo(); ?>'; indexphp=" index.php"; break;;
+        [Nn]* ) php=0; phpis="#"; break;;
+        * ) echo "Please answer yes or no.  <yY/nN>";;
+    esac
+done
 
+while true; do
+    read -p "Do you want to install MariaDB? <y/N> " mariadb
+    case $mariadb in
+        [Yy]* ) mariadb=1; break;;
+        [Nn]* ) mariadb=0; break;;
+        * ) echo "Please answer yes or no.  <yY/nN>";;
+    esac
+done
+
+while true; do
+    read -p "Do you want to install phpMyAdmin? <y/N> " pma
+    case $pma in
+        [Yy]* ) pma=1; break;;
+        [Nn]* ) pma=0; break;;
+        * ) echo "Please answer yes or no.  <yY/nN>";;
+    esac
+done
+
+echo "	Updating repository"
+apt update -y
+
+if [ "$upgrade" = "1" ]; then
+echo "	Upgrading system"
+apt upgrade -y
+apt dist-upgrade -y
+echo "	Upgrading firmware"
+apt install -y rpi-update
+fi
+if [ "$nginx" = "1" ]; then
+
+echo "	Installing nginx"
+apt install -y nginx
 update-rc.d nginx defaults
-update-rc.d php7.0-fpm defaults
+echo "	Setting up nginx"
+sed -i 's/# server_names_hash_bucket_size/server_names_hash_bucket_size/' /etc/nginx/nginx.conf 
 
-sed -i 's/^;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/' /etc/php/7.0/fpm/php.ini
-sed -i 's/# server_names_hash_bucket_size/server_names_hash_bucket_size/' /etc/nginx/nginx.conf
 
-cat > /etc/nginx/sites-enabled/default << "EOF"
+uri='$uri'
+cat > /etc/nginx/sites-available/default <<EOF
 # Default server
 server {
 	listen 80 default_server;
@@ -29,17 +82,17 @@ server {
 	
 	server_name _;
 	root /var/www/default/public;
-	index index.php index.html index.htm default.html;
+	index$indexphp index.html index.htm default.html;
 
 	location / {
 		try_files $uri $uri/ =404;
 	}
 
-	# pass the PHP scripts to FastCGI server
-	location ~ \.php$ {
-		include snippets/fastcgi-php.conf;
-		fastcgi_pass unix:/run/php/php7.0-fpm.sock;
-	}
+	# the PHP scripts to FastCGI server
+	$phpis location ~ \.php$ {
+	$phpis	include snippets/fastcgi-php.conf;
+	$phpis	fastcgi_pass unix:/run/php/php7.0-fpm.sock;
+	$phpis }
 
 	# optimize static file serving
 	location ~* \.(jpg|jpeg|gif|png|css|js|ico|xml)$ {
@@ -54,24 +107,24 @@ server {
 	}
 }
 
-# yourbeautifuldomain.com server configuration
+# $domain server configuration
 server {
 	listen 80;
 	listen [::]:80;
 	
-	server_name yourbeautifuldomain.com www.yourbeautifuldomain.com;
-	root /var/www/yourbeautifuldomain.com/public;
-	index index.php index.html index.htm default.html;
+	server_name $domain www.$domain;
+	root /var/www/$domain/public;
+	index$indexphp index.html index.htm default.html;
 
 	location / {
 		try_files $uri $uri/ =404;
 	}
 
-	# pass the PHP scripts to FastCGI server
-	location ~ \.php$ {
-		include snippets/fastcgi-php.conf;
-		fastcgi_pass unix:/run/php/php7.0-fpm.sock;
-	}
+        # the PHP scripts to FastCGI server
+        $phpis location ~ \.php$ {
+        $phpis  include snippets/fastcgi-php.conf;
+        $phpis  fastcgi_pass unix:/run/php/php7.0-fpm.sock;
+        $phpis }
 	
 	# optimize static file serving
 	location ~* \.(jpg|jpeg|gif|png|css|js|ico|xml)$ {
@@ -88,63 +141,94 @@ server {
 EOF
 
 mkdir -p /var/www/default/public
-cat > /var/www/default/public/index.php << "EOF"
-<?php
+cat > /var/www/default/public/index$uzanti <<EOF
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<center><h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
 
-class Application
-{
-	public function __construct()
-	{
-		phpinfo();
-	}
-}
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
 
-$application = new Application();
+<p><em>Thank you for using nginx.</em></p>
+</center>
+$phpcode
+</body>
+</html>
 EOF
 
-mkdir -p /var/www/yourbeautifuldomain.com/public
-cat > /var/www/yourbeautifuldomain.com/public/index.php << "EOF"
-<?php
+mkdir -p /var/www/$domain/public
+cat > /var/www/$domain/public/index$uzanti <<EOF
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+    body {
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<center><h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
 
-class Application
-{
-	public function __construct()
-	{
-		phpinfo();
-	}
-}
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
 
-$application = new Application();
+<p><em>Thank you for using nginx.</em></p>
+</center>
+$phpcode
+</body>
+</html>
 EOF
-
-#rm -rf /var/www/html
 
 usermod -a -G www-data pi
 chown -R pi:www-data /var/www
 chgrp -R www-data /var/www
 chmod -R g+rw /var/www
 
-setfacl -d -R -m g::rw /var/www
-
-apt-get -y autoremove
-
+nginx -t
 service nginx restart
+fi
+if [ "$php" = "1" ]; then
+echo "	Installing PHP 7"
+apt install -y php7.0 php7.0-fpm php7.0-cli php7.0-opcache php7.0-mbstring php7.0-curl php7.0-xml php7.0-gd php7.0-mysql php7.0-zip
+echo "	Setting up PHP 7"
+update-rc.d php7.0-fpm defaults
+sed -i 's/^;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/' /etc/php/7.0/fpm/php.ini
 service php7.0-fpm restart
-
-# MariaDB
-read -p "Do you want to install MariaDB? <y/N> " prompt
-if [ "$prompt" = "y" ]; then
-  apt-get -t stretch -y install mariadb-server
-  mysql_secure_installation
-  service mysql restart
 fi
-
-# PhpMyAdmin
-read -p "Do you want to install PhpMyAdmin? <y/N> " prompt
-if [ "$prompt" = "y" ]; then
-	apt-get install -t stretch -y phpmyadmin
-	ln -s /usr/share/phpmyadmin /var/www/default/public
-	echo "http://192.168.XXX.XXX/phpmyadmin to enter PhpMyAdmin"
+if [ "$mariadb" = "1" ]; then
+echo "	Installing MariaDB"
+apt -y install mariadb-server
+echo "	Setting up MariaDB"
+mysql_secure_installation
+service mysql restart
 fi
-
-apt-get -y autoremove
+if [ "$pma" = "1" ]; then
+echo "	Installing phpMyAdmin"
+apt install -y phpmyadmin
+echo "	Setting up phpMyAdmin"
+ln -s /usr/share/phpmyadmin /var/www/default/public
+EOF=$( ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/' )
+echo "http://$EOF/phpmyadmin to enter PhpMyAdmin"
+fi
+apt -y autoremove
