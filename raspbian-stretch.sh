@@ -1,5 +1,5 @@
 #!/bin/bash
-# writed by iOSMAN
+# written by iOSMAN
 # https://github.com/iOSMANzZz/LEMP/
 
 if [ "$(whoami)" != "root" ]; then
